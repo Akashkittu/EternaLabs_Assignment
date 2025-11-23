@@ -70,10 +70,13 @@ const TokenTableRowInner = ({ token }: Props) => {
         'relative flex h-12 items-center px-4 text-[13px] leading-[1.35]',
         'border-t border-[#1A1A24]/70 first:border-t-0',
         'transition-all duration-150 ease-out',
+        // desktop hover
         'hover:-translate-y-[2px] hover:scale-[1.01] hover:shadow-[0_12px_30px_rgba(0,0,0,0.65)] hover:z-10',
+        // mobile/desktop tap (active)
+        'active:-translate-y-[2px] active:scale-[1.01] active:shadow-[0_12px_30px_rgba(0,0,0,0.65)] active:z-10',
         flash === 'up' && 'bg-green-950/25',
         flash === 'down' && 'bg-red-950/25',
-        !flash && 'hover:bg-[#11111D]',
+        !flash && 'hover:bg-[#11111D] active:bg-[#11111D]',
       )}
       onClick={() => {
         setMenuOpen(false);
@@ -127,7 +130,7 @@ const TokenTableRowInner = ({ token }: Props) => {
       <div className="ml-3 flex w-10 items-center justify-end">
         <Popover open={menuOpen} onOpenChange={setMenuOpen}>
           <PopoverTrigger
-            className="h-7 w-7 rounded-full border border-slate-700/60 bg-slate-900/70 hover:bg-slate-800/80"
+            className="h-7 w-7 rounded-full border border-slate-700/60 bg-slate-900/70 hover:bg-slate-800/80 active:bg-slate-700/80"
             onClick={(e) => {
               e.stopPropagation(); // don’t trigger row click
               setMenuOpen((prev) => !prev);
@@ -145,7 +148,7 @@ const TokenTableRowInner = ({ token }: Props) => {
           >
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-800/80"
+              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-800/80 active:bg-slate-700/80"
               onClick={() => {
                 setMenuOpen(false);
                 dispatch(tokenSelected(token));
@@ -157,7 +160,7 @@ const TokenTableRowInner = ({ token }: Props) => {
 
             <button
               type="button"
-              className="mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-800/80"
+              className="mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-800/80 active:bg-slate-700/80"
               onClick={() => {
                 setMenuOpen(false);
                 navigator.clipboard?.writeText(token.symbol);
@@ -169,7 +172,7 @@ const TokenTableRowInner = ({ token }: Props) => {
 
             <button
               type="button"
-              className="mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-800/80"
+              className="mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 hover:bg-slate-800/80 active:bg-slate-700/80"
               onClick={() => {
                 // later: open block explorer
                 setMenuOpen(false);
