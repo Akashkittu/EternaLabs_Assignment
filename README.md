@@ -135,3 +135,40 @@ node scripts/ws-server.js
 
 # 3. Start the Next.js dev server (terminal 2)
 npm run dev
+
+# 4. Open the app
+
+http://localhost:3000
+
+> **Note (production / Vercel):**  
+> The mock WebSocket server (`node scripts/ws-server.js`) only runs locally.  
+> On the Vercel deployment the header pill may show “Disconnected”, but the
+> table still uses the REST API data and remains fully functional.
+
+---
+
+## 🧪 Visual Regression
+
+Visual regression testing is implemented using **Playwright** to satisfy the
+“≤ 2 px diff with a visual-regression tool” requirement.
+
+```bash
+# with dev server + ws-server running
+npm run test:visual -- --update-snapshots   # create/update baseline snapshots
+npm run test:visual                         # compare against baselines
+
+
+The tests capture desktop + mobile screenshots of the Pulse page and compare
+them to stored baselines with a small pixel-diff threshold.
+
+---
+
+## 📱 Responsive
+
+The layout is responsive down to **320 px** width:
+
+- On small screens, less critical columns (like Market Cap) are hidden and the
+  table becomes horizontally scrollable.
+- On larger screens, the table is centered with a max width closely matching
+  the Axiom Pulse layout.
+
