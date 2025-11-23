@@ -1,36 +1,137 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Eterna Frontend Task – Token Trading Table
 
-## Getting Started
+Pixel-perfect replica of the Axiom Trade **Pulse** token discovery table, built with
+Next.js 14 App Router, TypeScript, Tailwind CSS, Redux Toolkit, React Query and a
+mock WebSocket price stream.
 
-First, run the development server:
+---
+
+## ✨ Features
+
+- **Token views**
+  - Category tabs: **New pairs**, **Final Stretch**, **Migrated**
+  - Search by token or contract address
+  - Network pills (SOL / BTC / ETH – UI only)
+  - View filters (Trending / Perpetuals / New – UI only, can be wired later)
+
+- **Rich interactions**
+  - Sortable columns: **Price**, **24h %**, **Volume 24h**, **Mkt Cap**
+  - Row hover elevation + subtle highlight
+  - Click row → token **details modal**
+  - Row “…” **popover** with:
+    - View details (opens modal)
+    - Copy symbol
+    - Open on explorer (placeholder action)
+
+- **Real-time data**
+  - Mock WebSocket server streaming price, volume 24h and 24h% updates
+  - Client-side WebSocket hook merges live deltas into React Query data
+  - Smooth green/red **flash** on price movement (up/down)
+
+- **Resilient UX**
+  - Skeleton **table with shimmer** during initial load
+  - **Progressive loading** overlay while background refetch is in progress
+  - Dedicated **error** state with retry button for API failures
+  - React **ErrorBoundary** wrapping the token table to catch render errors
+
+---
+
+## 🧱 Architecture & Tech Stack
+
+### Framework & styling
+
+- **Next.js 14** App Router
+- **TypeScript** with `strict: true`
+- **Tailwind CSS** for styling
+
+### State & data
+
+- **Redux Toolkit**
+
+  - `uiSlice`
+    - `activeCategory`: `'new_pairs' | 'final_stretch' | 'migrated'`
+    - `sort`: `{ field: 'price' | 'volume24h' | 'marketCap' | 'priceChange24h'; direction: 'asc' | 'desc' }`
+    - `selectedToken`: currently open token in the details modal
+
+  - `tokensSlice`
+    - `connectionStatus`: `'connecting' | 'connected' | 'disconnected' | 'error'`
+    - `liveOverrides`: map of latest real-time updates per token (`PriceUpdate`)
+    - `lastUpdateTs`: timestamp of last live update
+
+- **React Query**
+
+  - REST endpoint `GET /api/tokens?category=` provides base token lists
+  - `useTokenTableData(searchQuery)`:
+    1. Fetches category tokens via React Query
+    2. Merges WebSocket overrides from `tokensSlice.liveOverrides`
+    3. Applies search (symbol/name) and sorting
+    4. Returns memoized `tokens` + `isLoading` / `isError` / `isFetching` flags
+
+- **Real-time WebSocket stream**
+
+  - `scripts/ws-server.js`
+    - Node `ws` server with an in-memory token list
+    - Applies random-walk updates to `price`, `volume24h`, `priceChange24h`
+    - Broadcasts `PriceUpdate[]` to all connected clients every second
+  - `src/features/token-table/hooks/usePriceStream.ts`
+    - Opens WebSocket connection (URL from `NEXT_PUBLIC_WS_URL`)
+    - Listens for messages and dispatches `priceUpdateReceived`
+    - Updates connection status in Redux
+
+### UI / feature modules
+
+- `src/app/page.tsx`
+  - Main “Pulse” screen
+  - Header with title & description
+  - Network pills, search bar, “Paste CA” button, and view filters
+  - Wraps `<TokenTable />` + `<TokenDetailsModal />` in `<ErrorBoundary>`
+
+- `src/features/token-table/components`
+  - `TokenTable`
+    - Orchestrates loading, error, progressive overlay
+    - Uses `useTokenTableData` + `usePriceStream`
+  - `TokenTableHeader`
+    - Category tabs (New pairs / Final Stretch / Migrated)
+    - Sortable column headers with active state indicator
+  - `TokenTableRow`
+    - Token avatar, symbol, name
+    - Price, 24h %, Volume 24h, Mkt Cap cells
+    - Real-time flash animation on price change
+    - Row click → opens details modal
+    - “…” popover menu with actions
+  - `TokenTableSkeleton`
+    - Skeleton version of the table used for initial + overlay loading
+  - `TokenDetailsModal`
+    - Dialog showing token stats
+    - Controlled by `selectedToken` in `uiSlice`
+
+- `src/components/ui`
+  - Lightweight primitives inspired by shadcn/ui:
+    - `dialog` – modal overlay with portal & focus management
+    - `popover` – anchored floating panel for row actions
+    - `tabs` – segmented control for categories
+    - `skeleton` – animated shimmer blocks for loading
+
+The architecture is intentionally **atomic**:
+
+- `app/` – routing, layout, API routes
+- `features/` – self-contained feature modules
+- `store/` – Redux store & slices
+- `lib/` – shared utilities, API client, WebSocket factory, types
+- `components/ui/` – small, reusable primitives
+
+---
+
+## 🚀 Running the project
+
+From the project root:
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start the WebSocket mock server (terminal 1)
+node scripts/ws-server.js
+
+# 3. Start the Next.js dev server (terminal 2)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

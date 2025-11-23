@@ -11,12 +11,6 @@ import { useEffect, useRef, useState, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { useAppDispatch } from '@/store/hooks';
 import { tokenSelected } from '@/store/slices/uiSlice';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 interface Props {
   token: Token;
@@ -75,7 +69,6 @@ const TokenTableRowInner = ({ token }: Props) => {
       className={cn(
         'relative flex h-12 items-center px-4 text-[13px] leading-[1.35]',
         'border-t border-[#1A1A24]/70 first:border-t-0',
-        // strong pop-out motion
         'transition-all duration-150 ease-out',
         'hover:-translate-y-[2px] hover:scale-[1.01] hover:shadow-[0_12px_30px_rgba(0,0,0,0.65)] hover:z-10',
         flash === 'up' && 'bg-green-950/25',
@@ -87,30 +80,17 @@ const TokenTableRowInner = ({ token }: Props) => {
         dispatch(tokenSelected(token));
       }}
     >
-      {/* Left: logo + symbol + name with tooltip */}
+      {/* Left: logo + symbol + name (no tooltip) */}
       <div className="flex w-40 items-center gap-2">
         <div className="h-6 w-6 rounded-full bg-gradient-to-br from-slate-600 to-slate-500" />
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col text-left">
-                <span className="text-[13px] font-medium text-slate-50">
-                  {token.symbol}
-                </span>
-                <span className="max-w-[140px] truncate text-[11px] text-slate-400">
-                  {token.name}
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">
-                {token.name}
-                <br />
-                ID: {token.id}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex flex-col text-left">
+          <span className="text-[13px] font-medium text-slate-50">
+            {token.symbol}
+          </span>
+          <span className="max-w-[140px] truncate text-[11px] text-slate-400">
+            {token.name}
+          </span>
+        </div>
       </div>
 
       {/* Price */}
@@ -158,7 +138,6 @@ const TokenTableRowInner = ({ token }: Props) => {
           </PopoverTrigger>
 
           <PopoverContent
-            // removed sideOffset & collisionPadding so they don't hit the DOM
             className="z-50 w-44 rounded-xl border border-slate-700 bg-[#05050C] p-1.5 text-xs shadow-[0_18px_45px_rgba(0,0,0,0.85)]"
             onClick={(e) => {
               e.stopPropagation(); // keep row click from firing

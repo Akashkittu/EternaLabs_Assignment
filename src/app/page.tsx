@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { TokenTable } from '@/features/token-table/components/TokenTable';
 import { TokenDetailsModal } from '@/features/token-table/components/TokenDetailsModal';
 import { cn } from '@/lib/utils';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useAppSelector } from '@/store/hooks';
 
 type Network = 'SOL' | 'BTC' | 'ETH';
 type ViewFilter = 'Trending' | 'Perpetuals' | 'New';
@@ -14,22 +16,86 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const [viewFilter, setViewFilter] = useState<ViewFilter>('Trending');
 
+  // ---- Live connection status for header pill ----
+  const connectionStatus = useAppSelector(
+    (state) => state.tokens.connectionStatus,
+  );
+  const lastUpdateTs = useAppSelector((state) => state.tokens.lastUpdateTs);
+
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const secondsSinceUpdate =
+    lastUpdateTs != null ? Math.round((now - lastUpdateTs) / 1000) : null;
+
+  let statusLabel = 'Connecting…';
+  let statusColor = 'text-amber-300';
+  let statusDot = 'bg-amber-400';
+
+  if (connectionStatus === 'connected') {
+    const fresh = secondsSinceUpdate != null && secondsSinceUpdate <= 3;
+    statusLabel = fresh ? 'Live data' : 'Live (idle)';
+    statusColor = fresh ? 'text-emerald-300' : 'text-slate-300';
+    statusDot = fresh ? 'bg-emerald-400' : 'bg-slate-500';
+  } else if (connectionStatus === 'disconnected') {
+    statusLabel = 'Disconnected';
+    statusColor = 'text-rose-300';
+    statusDot = 'bg-rose-400';
+  } else if (connectionStatus === 'error') {
+    statusLabel = 'Error';
+    statusColor = 'text-red-300';
+    statusDot = 'bg-red-400';
+  }
+
+  const latencyText =
+    secondsSinceUpdate != null ? `${secondsSinceUpdate}s ago` : 'waiting…';
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#02010A] via-[#050516] to-[#02010A] text-slate-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-16 pt-10">
         {/* Top bar: title + network pills */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Pulse
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Pulse</h1>
+
+            {/* Subtitle with subtle hover accent */}
             <p className="mt-1 text-sm text-slate-400">
-              Discover on-chain tokens with real-time price updates and
-              trading-grade metrics.
+              <span className="group inline-flex cursor-default items-center gap-2">
+                <span className="transition-colors group-hover:text-slate-100">
+                  Discover on-chain tokens with real-time price updates and
+                  trading-grade metrics.
+                </span>
+                <span className="h-px w-10 rounded-full bg-gradient-to-r from-emerald-400/0 via-emerald-400/70 to-sky-400/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              </span>
             </p>
+
+            {/* Live connection pill */}
+            <div className="mt-2 flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-1 rounded-full border border-slate-700/70 bg-slate-900/60 px-2 py-0.5">
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    statusDot,
+                    connectionStatus === 'connected' && 'animate-pulse',
+                  )}
+                />
+                <span className={cn('font-medium', statusColor)}>
+                  {statusLabel}
+                </span>
+                {secondsSinceUpdate != null && (
+                  <span className="text-[10px] text-slate-500">
+                    · last tick {latencyText}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Cooler network selector */}
+          {/* Network selector */}
           <div className="flex flex-col items-end gap-1 text-xs sm:flex-row sm:items-center sm:gap-3">
             <span className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
               Networks
@@ -95,7 +161,7 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Cooler view filters (UI only) */}
+          {/* View filters (UI only) */}
           <div className="flex flex-wrap items-center gap-2">
             {(['Trending', 'Perpetuals', 'New'] as ViewFilter[]).map(
               (filter) => (
@@ -118,9 +184,11 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Token table – still reacts only to search for now */}
-        <TokenTable searchQuery={search} />
-        <TokenDetailsModal />
+        {/* Token table + modal wrapped in ErrorBoundary */}
+        <ErrorBoundary>
+          <TokenTable searchQuery={search} />
+          <TokenDetailsModal />
+        </ErrorBoundary>
       </div>
     </main>
   );
